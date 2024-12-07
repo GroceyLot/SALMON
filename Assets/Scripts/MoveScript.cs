@@ -60,6 +60,18 @@ public class MoveScript : MonoBehaviour
             holdTimeRight += Time.deltaTime; // Increment timer while button is held
         }
 
+        if (Input.GetMouseButton(0) && Input.GetMouseButton(1))
+        {
+            holdTimeLeft = 0f;
+            holdTimeRight = 0f;
+            if (middleCooldown < 0.01f)
+            {
+                GameObject middleObject = FindMiddleObject();
+                ApplyMiddleForce(middleObject);
+                middleCooldown = 1;
+            }
+        }
+
         if (Input.GetMouseButtonUp(1))
         {
             GameObject mostRightObject = FindMostRightObject();
@@ -68,7 +80,7 @@ public class MoveScript : MonoBehaviour
         }
 
         // Middle mouse button
-        if (Input.GetMouseButtonDown(2) && middleCooldown < 0.01f)
+        if (Input.GetMouseButton(2) && middleCooldown < 0.01f)
         {
             GameObject middleObject = FindMiddleObject();
             ApplyMiddleForce(middleObject); // Apply immediate force to the middle object

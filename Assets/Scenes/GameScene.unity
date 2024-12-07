@@ -798,7 +798,7 @@ MonoBehaviour:
   - {fileID: 95334716}
   maxForce: 125
   maxSideForce: 31.25
-  middleForce: 75
+  middleForce: 100
   middleCooldownTime: 5
   UIObject: {fileID: 1853197217}
   fillTime: 2
