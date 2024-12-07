@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:ProgressBar value="0.5" high-value="1" name="LeftBar" style="left: 0; top: 0; right: auto; width: 40%; height: auto; position: absolute; max-width: 100px; min-width: 0;" />
+    <ui:ProgressBar value="0.5" high-value="1" name="RightBar" style="left: auto; top: 0; right: 0; width: 40%; height: auto; position: absolute; max-width: 100px; min-width: 0;" />
+    <ui:ProgressBar value="0.5" high-value="1" name="MiddleBar" style="left: auto; top: auto; right: auto; width: 40%; height: auto; position: absolute; max-width: 100px; min-width: 0; bottom: auto; justify-content: flex-end; align-self: center; align-items: stretch;" />
+</ui:UXML>
