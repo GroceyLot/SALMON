@@ -7,7 +7,7 @@ public class CameraMove : MonoBehaviour
 
     [Header("Camera Settings")]
     public Vector3 offset = new Vector3(0, 10, -20); // Offset from the target
-    public float smoothing = 100f; // Smoothing factor for the follow
+    public float smoothing = 0.5f; // Smoothing factor for the follow
 
     private void LateUpdate()
     {
