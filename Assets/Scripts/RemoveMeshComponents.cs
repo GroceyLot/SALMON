@@ -3,6 +3,7 @@ using UnityEngine;
 public class RemoveMeshComponents : MonoBehaviour
 {
     public string targetTag = "YourTagName";
+    public bool enabled = true;
 
     void Start()
     {
