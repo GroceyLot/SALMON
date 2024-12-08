@@ -7,6 +7,7 @@ public class RemoveMeshComponents : MonoBehaviour
 
     void Start()
     {
+        if (!enabled) return;
         // Find all objects with the specified tag
         GameObject[] taggedObjects = GameObject.FindGameObjectsWithTag(targetTag);
 
