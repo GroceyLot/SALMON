@@ -150,7 +150,8 @@ public class MoveScript : MonoBehaviour
             // Calculate and apply combined force
             Vector3 downwardForce = Vector3.down * Mathf.Clamp(holdTime * forceMultiplier, 0f, maxForce);
             Vector3 horizontalForce = horizontalDirection * Mathf.Clamp(holdTime * sideForceMultiplier, 0f, maxSideForce);
-            rb.AddForce(downwardForce + horizontalForce, ForceMode.Impulse);
+            rb.AddForce(downwardForce, ForceMode.Impulse);
+            rb.AddForce(horizontalForce, ForceMode.Impulse);
         }
         else
         {
