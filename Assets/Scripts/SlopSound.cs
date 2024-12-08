@@ -36,7 +36,7 @@ public class SlopSound : MonoBehaviour
     }
 
     // Callback method to handle collisions
-    private void HandleCollision(Collision collision, GameObject target)
+    void HandleCollision(Collision collision, GameObject target)
     {
         // Get the relative velocity magnitude
         float impactForce = collision.relativeVelocity.magnitude;
@@ -61,18 +61,5 @@ public class SlopSound : MonoBehaviour
             // Reset pitch to original value
             audioSource.pitch = 1f;
         }
-    }
-}
-
-// Helper class to listen for collisions
-public class CollisionListener : MonoBehaviour
-{
-    public delegate void CollisionEventHandler(Collision collision, GameObject target);
-    public event CollisionEventHandler OnCollisionOccurred;
-
-    void OnCollisionEnter(Collision collision)
-    {
-        // Invoke the event if a subscriber exists
-        OnCollisionOccurred?.Invoke(collision, gameObject);
     }
 }

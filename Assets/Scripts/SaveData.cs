@@ -4,7 +4,7 @@ using System.IO;
 [System.Serializable]
 public class Saveable
 {
-    public string name;
+    public int checkpoint = 0;
 }
 
 public class SaveData : MonoBehaviour
@@ -16,10 +16,17 @@ public class SaveData : MonoBehaviour
     void Start()
     {
         filePath = Application.persistentDataPath + $"/{filename}.json";
+        Debug.Log(filePath);
         if (File.Exists(filePath))
         {
             string jsonString = File.ReadAllText(filePath);
             data = JsonUtility.FromJson<Saveable>(jsonString);
+        }
+        else
+        {
+            data = new Saveable();
+            string jsonString = JsonUtility.ToJson(data);
+            File.WriteAllText(filePath, jsonString);
         }
     }
 
