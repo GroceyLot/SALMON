@@ -12,6 +12,24 @@ public class CheckpointManager : MonoBehaviour
     {
         StartCoroutine(LateStart());
     }
+
+    bool IsDescendantOrEqual(GameObject obj, GameObject target)
+    {
+        if (obj == null || target == null)
+            return false;
+
+        Transform current = obj.transform;
+
+        while (current != null)
+        {
+            if (current.gameObject == target)
+                return true;
+            current = current.parent;
+        }
+
+        return false;
+    }
+
     IEnumerator LateStart()
     {
         yield return null;
@@ -28,6 +46,7 @@ public class CheckpointManager : MonoBehaviour
 
         for (int i = 0; i < checkpoints.Length; i++)
         {
+            GameObject target = checkpoints[i];
             // Add the CollisionListener component if not already present
             var listener = target.GetComponent<CollisionListener>();
             if (listener == null)
@@ -36,12 +55,18 @@ public class CheckpointManager : MonoBehaviour
             }
             
             // Pass the callback for collision handling
-            listener.OnTriggerOccurred += void (Collider other, GameObject target) => HandleCollision(other, target, i);
+            listener.OnTriggerOccurred += void (Collider other, GameObject _target) => HandleCollision(other, _target, i);
         }
     }
 
     void HandleCollision(Collider other, GameObject target, int index)
     {
+        Debug.Log("Collision");
+        if (!IsDescendantOrEqual(other, player)) {
+            Debug.Log("with something");
+            return;
+        }
+        Debug.Log("with player");
         saveData.data.checkpoint = index;
     }
 }
