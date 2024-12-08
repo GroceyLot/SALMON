@@ -12,7 +12,7 @@ public class CheckpointManager : MonoBehaviour
     {
         StartCoroutine(LateStart());
     }
-    IEnumrator LateStart()
+    IEnumerator LateStart()
     {
         yield return null;
         // Move the player to the saved checkpoint position on start.
