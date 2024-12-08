@@ -14,7 +14,6 @@ public class MoveScript : MonoBehaviour
     [Header("UI Settings")]
     public GameObject UIObject;
     public float fillTime = 0f;
-
     void Start()
     {
         forceMultiplier = maxForce / fillTime;
