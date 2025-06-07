@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Linq;
 
 public class SlopSound : MonoBehaviour
 {
@@ -14,6 +15,7 @@ public class SlopSound : MonoBehaviour
     public float maxVolume = 1f;    // Maximum volume
     public float volumeModifier = 0.1f; // Volume modifier
     public float pitchRange = 0.1f; // Pitch range
+    public GameObject[] ignoreObjects; // Array of GameObjects to ignore
 
     void Start()
     {
@@ -38,6 +40,11 @@ public class SlopSound : MonoBehaviour
     // Callback method to handle collisions
     void HandleCollision(Collision collision, GameObject target)
     {
+        // Check to see if the hit object is an ignore object
+        if (ignoreObjects.Contains(collision.collider.gameObject) || targetObjects.Contains(collision.collider.gameObject))
+        {
+            return;
+        }
         // Get the relative velocity magnitude
         float impactForce = collision.relativeVelocity.magnitude;
 
