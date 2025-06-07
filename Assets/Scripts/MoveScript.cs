@@ -22,6 +22,10 @@ public class MoveScript : MonoBehaviour
     public float airJumpCooldown = 2f;            // Cooldown in seconds
     private float airJumpCooldownTimer = 0f;      // Timer tracking cooldown
 
+    [Header("Raycast Settings")]
+    public LayerMask raycastMask; // Assign this in the Inspector to ignore the fish layer
+    public float raycastDistance = 1f;
+
     void Start()
     {
         forceMultiplier = maxForce / fillTime;
@@ -91,31 +95,53 @@ public class MoveScript : MonoBehaviour
 
     private GameObject FindMostLeftObject()
     {
-        if (objects == null || objects.Length == 0) return null;
+        GameObject mostLeft = null;
+        float minX = float.MaxValue;
 
-        GameObject mostLeft = objects[0];
+        // First pass: use raycast
         foreach (GameObject obj in objects)
         {
-            if (obj != null && obj.transform.position.x < mostLeft.transform.position.x)
+            if (obj == null) continue;
+
+            Ray ray = new Ray(obj.transform.position, Vector3.down);
+            Debug.DrawRay(obj.transform.position, Vector3.down * raycastDistance, Color.red, 1f);
+            if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, raycastMask))
             {
-                mostLeft = obj;
+                float x = obj.transform.position.x;
+                if (x < minX)
+                {
+                    minX = x;
+                    mostLeft = obj;
+                }
             }
         }
+
+        Debug.Log($"Most left object: {mostLeft?.name ?? "None"} at X: {minX}");
         return mostLeft;
     }
 
     private GameObject FindMostRightObject()
     {
-        if (objects == null || objects.Length == 0) return null;
+        GameObject mostRight = null;
+        float maxX = float.MinValue;
 
-        GameObject mostRight = objects[0];
+        // First pass: use raycast
         foreach (GameObject obj in objects)
         {
-            if (obj != null && obj.transform.position.x > mostRight.transform.position.x)
+            if (obj == null) continue;
+
+            Ray ray = new Ray(obj.transform.position, Vector3.down);
+            if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, raycastMask))
             {
-                mostRight = obj;
+                float x = obj.transform.position.x;
+                if (x > maxX)
+                {
+                    maxX = x;
+                    mostRight = obj;
+                }
             }
         }
+
         return mostRight;
     }
 
@@ -126,9 +152,9 @@ public class MoveScript : MonoBehaviour
         Rigidbody rb = targetObject.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            Vector3 downwardForce = Vector3.down * Mathf.Clamp(holdTime * forceMultiplier, 0f, maxForce);
+            Vector3 opwardForce = Vector3.up * Mathf.Clamp(holdTime * forceMultiplier, 0f, maxForce);
             Vector3 horizontalForce = horizontalDirection * Mathf.Clamp(holdTime * sideForceMultiplier, 0f, maxSideForce);
-            rb.AddForce(downwardForce, ForceMode.Impulse);
+            rb.AddForce(opwardForce, ForceMode.Impulse);
             rb.AddForce(horizontalForce, ForceMode.Impulse);
         }
         else
