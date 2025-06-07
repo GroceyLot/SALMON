@@ -1,29 +1,52 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class CameraMove : MonoBehaviour
 {
     [Header("Target Settings")]
-    public Transform target; // The target for the camera to follow
+    public List<Transform> targets = new List<Transform>(); // List of targets to average position
+    public Transform rotationTarget; // Single target to take Z rotation from
 
     [Header("Camera Settings")]
-    public Vector3 offset = new Vector3(0, 10, -20); // Offset from the target
-    public float smoothing = 0.5f; // Smoothing factor for the follow
+    public Vector3 offset = new Vector3(0, 10, -20); // Offset from the average position
+    public float smoothing = 0.5f; // Smoothing factor for position and rotation
+    public bool useZRotation = false; // Whether to use Z rotation from the rotation target
 
     private void LateUpdate()
     {
-        if (target == null)
+        if (targets == null || targets.Count == 0)
         {
-            Debug.LogWarning("SmoothCameraFollow: No target assigned to the camera.");
+            Debug.LogWarning("CameraMove: No position targets assigned.");
             return;
         }
 
-        // Calculate the desired position
-        Vector3 desiredPosition = target.position + offset;
+        if (useZRotation && rotationTarget == null)
+        {
+            Debug.LogWarning("CameraMove: Z rotation is enabled, but no rotation target assigned.");
+            return;
+        }
 
-        // Smoothly interpolate to the desired position
-        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, (1f/smoothing) * Time.deltaTime);
+        // Average the positions of all targets
+        Vector3 averagePosition = Vector3.zero;
+        foreach (Transform t in targets)
+        {
+            averagePosition += t.position;
+        }
+        averagePosition /= targets.Count;
 
-        // Update the camera position
-        transform.position = smoothedPosition;
+        // Desired camera position with offset
+        Vector3 desiredPosition = averagePosition + offset;
+
+        // Smooth camera movement
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, (1f / smoothing) * Time.deltaTime);
+
+        // Conditionally apply Z rotation
+        if (useZRotation)
+        {
+            Vector3 currentEuler = transform.eulerAngles;
+            float targetZ = -rotationTarget.eulerAngles.z + 90f;
+            float smoothedZ = Mathf.LerpAngle(currentEuler.z, targetZ, (1f / smoothing) * Time.deltaTime);
+            transform.rotation = Quaternion.Euler(currentEuler.x, currentEuler.y, smoothedZ);
+        }
     }
 }

@@ -24,7 +24,10 @@ public class MoveScript : MonoBehaviour
 
     [Header("Raycast Settings")]
     public LayerMask raycastMask; // Assign this in the Inspector to ignore the fish layer
-    public float raycastDistance = 1f;
+    public float raycastDistance = 0.25f;
+
+    private bool isHoldingLeft = false;
+    private bool isHoldingRight = false;
 
     void Start()
     {
@@ -51,61 +54,117 @@ public class MoveScript : MonoBehaviour
 
     private void HandleInput()
     {
-        // Left mouse button
-        if (Input.GetMouseButton(0))
+        // ── LEFT (Mouse0 or A) ────────────────────────────────────────────────
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.A))
         {
-            holdTimeLeft += Time.deltaTime;
-        }
-
-        if (Input.GetMouseButtonUp(0))
-        {
-            GameObject mostLeftObject = FindMostLeftObject();
-            ApplyForce(mostLeftObject, holdTimeLeft, Vector3.right);
+            isHoldingLeft = true;
             holdTimeLeft = 0f;
         }
 
-        // Right mouse button
-        if (Input.GetMouseButton(1))
+        if (isHoldingLeft)
+            holdTimeLeft += Time.deltaTime;
+
+        if (Input.GetMouseButtonUp(0) || Input.GetKeyUp(KeyCode.A))
         {
-            holdTimeRight += Time.deltaTime;
+            if (isHoldingLeft)
+            {
+                (GameObject mostLeftObject, bool wallJump) = FindMostLeftObject();
+                ApplyForce(mostLeftObject, holdTimeLeft, Vector3.right, wallJump);
+                holdTimeLeft = 0f;
+            }
+            isHoldingLeft = false;
         }
 
-        if (Input.GetMouseButtonUp(1))
+        // ── RIGHT (Mouse1 or D) ───────────────────────────────────────────────
+        if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.D))
         {
-            GameObject mostRightObject = FindMostRightObject();
-            ApplyForce(mostRightObject, holdTimeRight, Vector3.left);
+            isHoldingRight = true;
             holdTimeRight = 0f;
         }
 
-        // Middle mouse button (Air Jump)
-        if (Input.GetMouseButtonDown(2) && airJumpCooldownTimer <= 0f)
+        if (isHoldingRight)
+            holdTimeRight += Time.deltaTime;
+
+        if (Input.GetMouseButtonUp(1) || Input.GetKeyUp(KeyCode.D))
+        {
+            if (isHoldingRight)
+            {
+                (GameObject mostRightObject, bool wallJump) = FindMostRightObject();
+                ApplyForce(mostRightObject, holdTimeRight, Vector3.left, wallJump);
+                holdTimeRight = 0f;
+            }
+            isHoldingRight = false;
+        }
+
+        // ── AIR JUMP (Mouse2 or W) ────────────────────────────────────────────
+        if ((Input.GetMouseButtonDown(2) || Input.GetKeyDown(KeyCode.W))
+             && airJumpCooldownTimer <= 0f)
         {
             foreach (GameObject obj in objects)
             {
                 if (obj == null) continue;
                 Rigidbody rb = obj.GetComponent<Rigidbody>();
                 if (rb != null)
-                {
                     rb.AddForce(Vector3.up * airJumpForce, ForceMode.Impulse);
-                }
             }
             airJumpCooldownTimer = airJumpCooldown;
         }
     }
 
-    private GameObject FindMostLeftObject()
+    // Helper: casts the object’s BoxCollider (with its rotation) in a world-space direction
+    private bool IsTouchingGlobalDirection(BoxCollider box, Vector3 worldDir)
+    {
+        Vector3 center = box.bounds.center;
+        Vector3 halfExtents = box.size * 0.5f * 0.95f;      // slight shrink to avoid self-hits
+        Quaternion orient = box.transform.rotation;
+
+        return Physics.BoxCast(
+            center,
+            halfExtents,
+            worldDir,
+            out _,
+            orient,
+            raycastDistance,
+            raycastMask
+        );
+    }
+
+    private (GameObject, bool) FindMostLeftObject()
     {
         GameObject mostLeft = null;
         float minX = float.MaxValue;
+        bool anyGround = false;
 
-        // First pass: use raycast
+        // 1) Look for objects “standing” on something below
         foreach (GameObject obj in objects)
         {
             if (obj == null) continue;
+            var box = obj.GetComponent<BoxCollider>();
+            if (box == null) continue;
 
-            Ray ray = new Ray(obj.transform.position, Vector3.down);
-            Debug.DrawRay(obj.transform.position, Vector3.down * raycastDistance, Color.red, 1f);
-            if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, raycastMask))
+            if (IsTouchingGlobalDirection(box, Vector3.down))
+            {
+                float x = obj.transform.position.x;
+                if (x < minX)
+                {
+                    minX = x;
+                    mostLeft = obj;
+                    anyGround = true;
+                }
+            }
+        }
+
+        if (anyGround)
+            return (mostLeft, false);
+
+        // 2) No ground hits → look for a wall to the left
+        foreach (GameObject obj in objects)
+        {
+            if (obj == null) continue;
+            var box = obj.GetComponent<BoxCollider>();
+            if (box == null) continue;
+
+            if (IsTouchingGlobalDirection(box, Vector3.left))
             {
                 float x = obj.transform.position.x;
                 if (x < minX)
@@ -116,22 +175,45 @@ public class MoveScript : MonoBehaviour
             }
         }
 
-        Debug.Log($"Most left object: {mostLeft?.name ?? "None"} at X: {minX}");
-        return mostLeft;
+        return (mostLeft, true);
     }
 
-    private GameObject FindMostRightObject()
+    private (GameObject, bool) FindMostRightObject()
     {
         GameObject mostRight = null;
         float maxX = float.MinValue;
+        bool anyGround = false;
 
-        // First pass: use raycast
+        // 1) Look for objects “standing” on something below
         foreach (GameObject obj in objects)
         {
             if (obj == null) continue;
+            var box = obj.GetComponent<BoxCollider>();
+            if (box == null) continue;
 
-            Ray ray = new Ray(obj.transform.position, Vector3.down);
-            if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, raycastMask))
+            if (IsTouchingGlobalDirection(box, Vector3.down))
+            {
+                float x = obj.transform.position.x;
+                if (x > maxX)
+                {
+                    maxX = x;
+                    mostRight = obj;
+                    anyGround = true;
+                }
+            }
+        }
+
+        if (anyGround)
+            return (mostRight, false);
+
+        // 2) No ground hits → look for a wall to the right
+        foreach (GameObject obj in objects)
+        {
+            if (obj == null) continue;
+            var box = obj.GetComponent<BoxCollider>();
+            if (box == null) continue;
+
+            if (IsTouchingGlobalDirection(box, Vector3.right))
             {
                 float x = obj.transform.position.x;
                 if (x > maxX)
@@ -142,18 +224,20 @@ public class MoveScript : MonoBehaviour
             }
         }
 
-        return mostRight;
+        return (mostRight, true);
     }
 
-    private void ApplyForce(GameObject targetObject, float holdTime, Vector3 horizontalDirection)
+    private void ApplyForce(GameObject targetObject, float holdTime, Vector3 horizontalDirection, bool wallJump = false)
     {
         if (targetObject == null) return;
 
         Rigidbody rb = targetObject.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            Vector3 opwardForce = Vector3.up * Mathf.Clamp(holdTime * forceMultiplier, 0f, maxForce);
-            Vector3 horizontalForce = horizontalDirection * Mathf.Clamp(holdTime * sideForceMultiplier, 0f, maxSideForce);
+            float opwardMag = Mathf.Clamp(holdTime * forceMultiplier, 0f, maxForce);
+            float horizontalMag = Mathf.Clamp(holdTime * sideForceMultiplier, 0f, maxSideForce);
+            Vector3 opwardForce = Vector3.up * (wallJump ? horizontalMag : opwardMag);
+            Vector3 horizontalForce = horizontalDirection * (wallJump ? opwardMag : horizontalMag);
             rb.AddForce(opwardForce, ForceMode.Impulse);
             rb.AddForce(horizontalForce, ForceMode.Impulse);
         }

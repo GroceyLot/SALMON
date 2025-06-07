@@ -1,72 +1,106 @@
 using UnityEngine;
-using System.Linq;
+using System.Linq;                  // for Sum()
+using Unity.VisualScripting;      // for your CollisionListener hook
 
 public class SlopSound : MonoBehaviour
 {
     [Header("Object Settings")]
-    public AudioSource audioSource; // Assign the AudioSource in the inspector
-    public AudioClip[] slopSounds; // Array of "slop" sounds
-    public GameObject[] targetObjects; // Array of GameObjects to monitor for collisions
+    public AudioSource audioSource;     // Assign in inspector
+    public AudioClip[] slopSounds;      // Array of "slop" sounds
+    public GameObject[] targetObjects;  // Objects to monitor
+
     [Header("Collision Settings")]
-    public float minVelocity = 1f;  // Minimum collision velocity to trigger the sound
-    public float maxVelocity = 10f; // Maximum velocity for max volume
+    public float minVelocity = 1f;      // Min velocity to trigger
+    public float maxVelocity = 10f;     // Velocity for full volume
+
     [Header("Sound Settings")]
-    public float minVolume = 0.1f;  // Minimum volume
-    public float maxVolume = 1f;    // Maximum volume
-    public float volumeModifier = 0.1f; // Volume modifier
-    public float pitchRange = 0.1f; // Pitch range
-    public GameObject[] ignoreObjects; // Array of GameObjects to ignore
+    public float minVolume = 0.1f;      // Minimum volume clamp
+    public float maxVolume = 1f;        // Maximum volume clamp
+    public float volumeModifier = 0.1f; // Random volume tweak
+    public float pitchRange = 0.1f;     // Random pitch tweak
+
+    [Header("Filtering & Cooldown")]
+    public GameObject[] ignoreObjects;  // Things to skip
+    public float cooldown = 0.1f;       // Seconds between sounds
 
     void Start()
     {
-        // Attach CollisionListener to each target object
+        // Attach CollisionListener to each target
         foreach (GameObject target in targetObjects)
         {
             if (target != null)
             {
-                // Add the CollisionListener component if not already present
                 var listener = target.GetComponent<CollisionListener>();
                 if (listener == null)
-                {
                     listener = target.AddComponent<CollisionListener>();
-                }
-
-                // Pass the callback for collision handling
                 listener.OnCollisionOccurred += HandleCollision;
             }
         }
     }
 
-    // Callback method to handle collisions
+    void Update()
+    {
+        // Tick down our cooldown timer
+        cooldown -= Time.deltaTime;
+    }
+
+    // Called by your CollisionListener
     void HandleCollision(Collision collision, GameObject target)
     {
-        // Check to see if the hit object is an ignore object
-        if (ignoreObjects.Contains(collision.collider.gameObject) || targetObjects.Contains(collision.collider.gameObject))
+        // Skip hits on ignored or other targets
+        if (ignoreObjects.Contains(collision.collider.gameObject) ||
+            targetObjects.Contains(collision.collider.gameObject))
         {
             return;
         }
-        // Get the relative velocity magnitude
+
         float impactForce = collision.relativeVelocity.magnitude;
-
-        // Play the sound only if the impact force is above the minimum threshold
-        if (impactForce > minVelocity && slopSounds.Length > 0)
+        if (impactForce > minVelocity && slopSounds.Length > 0 && cooldown <= 0f)
         {
-            // Choose a random sound from the array
-            AudioClip randomClip = slopSounds[Random.Range(0, slopSounds.Length)];
+            // 1) Normalize force into 0–1
+            float norm = Mathf.Clamp01(
+                Mathf.InverseLerp(minVelocity, maxVelocity, impactForce)
+            );
 
-            // Map the impact force to a volume level
-            float volume = Mathf.Clamp(
-                Mathf.InverseLerp(minVelocity, maxVelocity, impactForce),
-                minVolume,
-                maxVolume
-            ) + Random.Range(-volumeModifier, volumeModifier);
+            // 2) Build weights so later clips get boosted by 'norm'
+            int N = slopSounds.Length;
+            float[] weights = new float[N];
+            for (int i = 0; i < N; i++)
+            {
+                // base weight 1, plus up to +1 when norm=1 and i=N−1
+                weights[i] = 1f + norm * (i / (float)(N - 1));
+            }
+
+            // 3) Pick a clip index by weighted random
+            int idx = GetWeightedRandomIndex(weights);
+            AudioClip chosenClip = slopSounds[idx];
+
+            // 4) Compute volume & pitch, then play
+            float volume = Mathf.Lerp(minVolume, maxVolume, norm)
+                           + Random.Range(-volumeModifier, volumeModifier);
             audioSource.pitch = 1f + Random.Range(-pitchRange, pitchRange);
+            audioSource.PlayOneShot(chosenClip, volume);
 
-            // Play the sound with the randomized pitch
-            audioSource.PlayOneShot(randomClip, volume);
-
-            // Reset pitch to original value
+            // Reset pitch & cooldown
             audioSource.pitch = 1f;
+            cooldown = 0.1f;
         }
+    }
+
+    // Standard weighted‐random helper
+    int GetWeightedRandomIndex(float[] weights)
+    {
+        float total = weights.Sum();
+        float r = Random.Range(0f, total);
+        float accum = 0f;
+
+        for (int i = 0; i < weights.Length; i++)
+        {
+            accum += weights[i];
+            if (r <= accum)
+                return i;
+        }
+
+        return weights.Length - 1; // fallback
     }
 }
