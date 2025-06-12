@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-
 public class UIScript : MonoBehaviour
 {
     private ProgressBar leftBar;
@@ -12,8 +11,6 @@ public class UIScript : MonoBehaviour
     public float rightValue = 0;
 
     private bool isOverlayVisible = false;
-    
-    public SaveData saveData;
 
     void OnEnable()
     {
@@ -27,6 +24,8 @@ public class UIScript : MonoBehaviour
         // Attach button events
         root.Q<Button>("ResetSaveButton").clicked += OnResetSave;
         root.Q<Button>("SaveQuitButton").clicked += OnSaveQuit;
+        root.Q<Button>("TestLevel").clicked += () => SceneManager.LoadScene("TestScene");
+        root.Q<Button>("CityLevel").clicked += () => SceneManager.LoadScene("OutsideScene");
 
         // Initially hide the overlay
         screenOverlay.style.display = DisplayStyle.None;
@@ -59,14 +58,11 @@ public class UIScript : MonoBehaviour
     // Button event handlers
     private void OnResetSave()
     {
-        saveData.data = new Saveable();
-        saveData.Save();
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
     
     private void OnSaveQuit()
     {
-        saveData.Save();
 #if UNITY_EDITOR
         // Exit play mode in the Unity Editor
         UnityEditor.EditorApplication.isPlaying = false;

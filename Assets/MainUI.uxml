@@ -2,7 +2,9 @@
     <ui:ProgressBar value="0.5" high-value="1" name="LeftBar" style="left: 0; top: 0; right: auto; width: 40%; height: auto; position: absolute; max-width: 100px; min-width: 0;" />
     <ui:ProgressBar value="0.5" high-value="1" name="RightBar" style="left: auto; top: 0; right: 0; width: 40%; height: auto; position: absolute; max-width: 100px; min-width: 0;" />
     <ui:VisualElement name="ScreenOverlay" style="display: none; position: relative; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 10; align-items: auto; justify-content: flex-start; align-self: auto;">
-        <ui:Button name="ResetSaveButton" text="Reset Save" style="margin-bottom: 10px; width: 100%; height: auto; left: 0; position: relative; align-self: center;" />
-        <ui:Button name="SaveQuitButton" text="Save &amp; Quit" style="margin-bottom: 10px; width: 100%; height: auto; left: 0; position: relative; align-self: center;" />
+        <ui:Button name="ResetSaveButton" text="Reset" style="margin-bottom: 10px; width: 100%; height: auto; left: 0; position: relative; align-self: center;" />
+        <ui:Button name="SaveQuitButton" text="Quit" style="margin-bottom: 10px; width: 100%; height: auto; left: 0; position: relative; align-self: center;" />
+        <ui:Button name="TestLevel" text="Test Level" style="margin-bottom: 10px; width: 100%; height: auto; left: 0; position: relative; align-self: center;" />
+        <ui:Button name="CityLevel" text="City Level" style="margin-bottom: 10px; width: 100%; height: auto; left: 0; position: relative; align-self: center;" />
     </ui:VisualElement>
 </ui:UXML>
